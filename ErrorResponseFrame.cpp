@@ -1,51 +1,48 @@
-#include "ErrorResponseFrame.hpp"
+#include "errorresponseframe.hpp"
 
-ErrorResponseFrame::ErrorResponseFrame()
+// default constructor adjusts the SYNC default value for ErrorResponseFrame
+ErrorResponseFrame::ErrorResponseFrame(): Frame()
 {
-  Frame();
-  SYNC &= ~0x70;
+  // bits 6-4 for the SYNC field of ErrorResponseFrame are 111
   SYNC |= 0x70; 
 }
 
-
-ErrorResponseFrame::ErrorResponseFrame(uint16_t sync_value, uint16_t framesize_value, uint16_t stream_id_value, uint32_t soc_value, 
-    uint8_t leap_byte_value, uint32_t fracsec_value, uint16_t chk_value, uint16_t error_response_1_value, 
-    uint16_t error_response_2_value): Frame(sync_value, framesize_value, stream_id_value, soc_value, leap_byte_value,
-    fracsec_value, chk_value)
+// constructor adjusts the SYNC default value for ErrorResponseFrame amd sets STREAM_ID using CapabilityConfigFrame
+ErrorResponseFrame::ErrorResponseFrame(std::shared_ptr<CapabilityConfigFrame>& capability_config_frame): Frame()
 {
-  setErrorResponse1(error_response_1_value);
-  setErrorResponse2(error_response_2_value);
-  SYNC &= ~0x70;
+  // bits 6-4 for the SYNC field of ErrorResponseFrame are 111
   SYNC |= 0x70; 
-  
+  setSTREAM_ID(capability_config_frame->getSTREAM_ID());
 }
 
-
-ErrorResponseFrame::~ErrorResponseFrame()
+// overridden method for writing a frame into buffer 
+uint16_t ErrorResponseFrame::frameToBits(uint8_t* buffer)
 {
-
+  // write common fields and advance the buffer pointer
+  buffer += Frame::frameToBits(buffer);
+  buffer += writeBuffer(buffer, getErrorResponse1());
+  buffer += writeBuffer(buffer, getErrorResponse2()); 
+  // compute CRC and set CHK before writing it to buffer
+  setCHK(computeCRC(buffer, getFRAMESIZE()-2));
+  buffer += writeBuffer(buffer, getCHK());
+  // return the size of the written bytes
+  return getFRAMESIZE();
 }
 
-
-void ErrorResponseFrame::setErrorResponse1(uint16_t error_response_1_value)
+// overridden method for reading a frame from buffer 
+uint16_t ErrorResponseFrame::bitsToFrame(uint8_t* buffer)
 {
-  ERROR_RESPONSE_1 = error_response_1_value;
-}
-
-
-void ErrorResponseFrame::setErrorResponse2(uint16_t error_response_2_value)
-{
-  ERROR_RESPONSE_2 = error_response_2_value;
-}
-
-
-uint16_t ErrorResponseFrame::getErrorResponse1()
-{
-  return ERROR_RESPONSE_1;
-}
-
-
-uint16_t ErrorResponseFrame::getErrorResponse2()
-{
-  return ERROR_RESPONSE_2;
+  // read common fields and advance the buffer pointer
+  buffer += Frame::bitsToFrame(buffer);
+  uint16_t errorResponse1;
+  buffer += readBuffer(buffer, errorResponse1);
+  setErrorResponse1(errorResponse1);
+  uint16_t errorResponse2;
+  buffer += readBuffer(buffer, errorResponse2);
+  setErrorResponse2(errorResponse2);
+  uint16_t chk;
+  buffer += readBuffer(buffer, chk);
+  setCHK(chk);
+  // return the size of the read bytes
+  return getFRAMESIZE(); 
 }

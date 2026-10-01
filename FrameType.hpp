@@ -1,3 +1,5 @@
+// Macros for FrameType, not used in the program currently
+
 // DATA = 000, HEADER = 001, CFG1 = 010, CFG2 = 011, CFG3 = 101, CMD = 100;
 enum class FrameTypeVer2
 {
@@ -9,7 +11,8 @@ enum class FrameTypeVer2
   CMD = 4
 };
 
-// PERIODIC_DATA = 1000, DISCRETE_DATA = 1001, CFG1 = 010, CFG2 = 011, CFG3 = 101, CMD = 100;
+// PERIODIC_DATA = 1000, DISCRETE_DATA = 1001, CAPABILITY = 1010, CONFIGURATION = 1011
+// CMD = 1100, RENAME_CMD = 1101, CONFIG_CMD = 1110, ERROR_RESPONSE = 1111
 enum class FrameTypeVer3
 {
   PERIODIC_DATA = 8, 
